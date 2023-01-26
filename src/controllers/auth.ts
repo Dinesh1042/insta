@@ -1,6 +1,12 @@
 import { Request, Response } from 'express';
+import { pick } from 'lodash';
 
+import AuthTokenPayload from '../interfaces/AuthTokenPayload';
 import RegisterUser from '../interfaces/RegisterUser';
+import {
+  getAccessAndRefreshToken,
+  saveRefreshToken,
+} from '../services/authToken';
 import {
   createUser,
   getUserByEmail,
@@ -30,7 +36,15 @@ const register = async (req: Request<{}, {}, RegisterUser>, res: Response) => {
       password: hashedPassword,
     });
 
-    res.json(user);
+    const { refreshToken, accessToken } = getAccessAndRefreshToken(
+      pick(user, ['id', 'name', 'username', 'email']) as AuthTokenPayload
+    );
+
+    await saveRefreshToken(refreshToken);
+
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
+
+    res.status(201).json({ user, accessToken });
   } catch (error) {
     res.json(error);
   }
