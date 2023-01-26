@@ -3,6 +3,7 @@ import { pick } from 'lodash';
 
 import AuthTokenPayload from '../interfaces/AuthTokenPayload';
 import RegisterUser from '../interfaces/RegisterUser';
+import SignIn from '../interfaces/SignIn';
 import {
   getAccessAndRefreshToken,
   saveRefreshToken,
@@ -12,7 +13,7 @@ import {
   getUserByEmail,
   getUserByUsername,
 } from '../services/user';
-import { hash } from '../utils/password';
+import { compare, hash } from '../utils/password';
 
 const register = async (req: Request<{}, {}, RegisterUser>, res: Response) => {
   try {
@@ -42,9 +43,44 @@ const register = async (req: Request<{}, {}, RegisterUser>, res: Response) => {
 
     await saveRefreshToken(refreshToken);
 
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: true,
+    });
 
-    res.status(201).json({ user, accessToken });
+    res.status(201).json({ accessToken });
+  } catch (error) {
+    res.json(error);
+  }
+};
+
+const signIn = async (req: Request<{}, {}, SignIn>, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await getUserByEmail(email);
+
+    if (!user) return res.status(404).json({ message: 'Invalid email' });
+
+    const isValidPassword = await compare(password, user.password);
+
+    if (!isValidPassword)
+      return res.status(400).json({ message: 'Invalid password' });
+
+    const { refreshToken, accessToken } = getAccessAndRefreshToken(
+      pick(user, ['id', 'name', 'username', 'email']) as AuthTokenPayload
+    );
+
+    await saveRefreshToken(refreshToken);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: true,
+    });
+
+    res.status(200).json({ accessToken });
   } catch (error) {
     res.json(error);
   }
@@ -52,4 +88,5 @@ const register = async (req: Request<{}, {}, RegisterUser>, res: Response) => {
 
 export default {
   register,
+  signIn,
 };
