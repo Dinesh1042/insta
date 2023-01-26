@@ -7,130 +7,149 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model comment {
-  id            Int            @id @default(autoincrement())
-  post_id       Int
-  user_id       Int
+model Comment {
+  id            Int           @id @default(autoincrement())
+  postId        Int           @map("post_id")
+  userId        Int           @map("user_id")
   description   String
-  parent_id     Int?
-  created_at    DateTime       @default(now()) @db.Timestamp(6)
-  updated_at    DateTime       @default(now()) @db.Timestamp(6)
-  comment       comment?       @relation("commentTocomment", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  other_comment comment[]      @relation("commentTocomment")
-  post          post           @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  insta_user    insta_user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  comment_like  comment_like[]
+  parentId      Int?          @map("parent_id")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime      @default(now()) @map("updated_at") @db.Timestamp(6)
+  comment       Comment?      @relation("commentTocomment", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  otherComments Comment[]     @relation("commentTocomment")
+  post          Post          @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  instaUser     InstaUser     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  commentLikes  CommentLike[]
+
+  @@map("comment")
 }
 
-model comment_like {
-  id         Int        @id @default(autoincrement())
-  comment_id Int
-  user_id    Int
-  comment    comment    @relation(fields: [comment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  insta_user insta_user @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model CommentLike {
+  id        Int       @id @default(autoincrement())
+  commentId Int       @map("comment_id")
+  userId    Int       @map("user_id")
+  comment   Comment   @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  instaUser InstaUser @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([comment_id, user_id])
+  @@unique([commentId, userId])
+  @@map("comment_like")
 }
 
-model follower {
-  id                                          Int        @id @default(autoincrement())
-  user_id                                     Int
-  follower_id                                 Int
-  insta_user_follower_follower_idToinsta_user insta_user @relation("follower_follower_idToinsta_user", fields: [follower_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  insta_user_follower_user_idToinsta_user     insta_user @relation("follower_user_idToinsta_user", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model Follower {
+  id                                          Int       @id @default(autoincrement())
+  userId                                      Int       @map("user_id")
+  followerId                                  Int       @map("follower_id")
+  insta_user_follower_follower_idToinsta_user InstaUser @relation("follower_follower_idToinsta_user", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  insta_user_follower_user_idToinsta_user     InstaUser @relation("follower_user_idToinsta_user", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([user_id, follower_id])
+  @@unique([userId, followerId])
+  @@map("follower")
 }
 
-model hashtag {
-  id           Int            @id @default(autoincrement())
-  name         String         @unique
-  post_hashtag post_hashtag[]
+model Hashtag {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  postHashtags PostHashtag[]
+
+  @@map("hashtag")
 }
 
-model insta_user {
-  id                                        Int            @id @default(autoincrement())
+model InstaUser {
+  id                                        Int           @id @default(autoincrement())
   name                                      String?
-  username                                  String         @unique
-  email                                     String         @unique
+  username                                  String        @unique
+  email                                     String        @unique
   password                                  String
-  created_at                                DateTime       @default(now()) @db.Timestamp(6)
-  updated_at                                DateTime       @default(now()) @db.Timestamp(6)
+  createdAt                                 DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt                                 DateTime      @default(now()) @map("updated_at") @db.Timestamp(6)
   avatar                                    String?
   bio                                       String?
-  private                                   Boolean        @default(false)
-  comment                                   comment[]
-  comment_like                              comment_like[]
-  follower_follower_follower_idToinsta_user follower[]     @relation("follower_follower_idToinsta_user")
-  follower_follower_user_idToinsta_user     follower[]     @relation("follower_user_idToinsta_user")
-  post                                      post[]
-  post_like                                 post_like[]
-  post_mention                              post_mention[]
-  saved_post                                saved_post[]
+  private                                   Boolean       @default(false)
+  comments                                  Comment[]
+  commentLikes                              CommentLike[]
+  follower_follower_follower_idToinsta_user Follower[]    @relation("follower_follower_idToinsta_user")
+  follower_follower_user_idToinsta_user     Follower[]    @relation("follower_user_idToinsta_user")
+  posts                                     Post[]
+  postLikes                                 PostLike[]
+  postMentions                              PostMention[]
+  savedPosts                                SavedPost[]
+
+  @@map("insta_user")
 }
 
-model post {
-  id           Int            @id @default(autoincrement())
+model Post {
+  id           Int           @id @default(autoincrement())
   description  String?
-  user_id      Int
-  created_at   DateTime       @default(now()) @db.Timestamp(6)
-  updated_at   DateTime       @default(now()) @db.Timestamp(6)
-  comment      comment[]
-  insta_user   insta_user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  post_hashtag post_hashtag[]
-  post_like    post_like[]
-  post_media   post_media[]
-  post_mention post_mention[]
-  saved_post   saved_post[]
+  userId       Int           @map("user_id")
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime      @default(now()) @map("updated_at") @db.Timestamp(6)
+  comments     Comment[]
+  instaUser    InstaUser     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  postHashtags PostHashtag[]
+  postLikes    PostLike[]
+  postMedias   PostMedia[]
+  postMentions PostMention[]
+  savedPosts   SavedPost[]
+
+  @@map("post")
 }
 
-model post_hashtag {
-  id         Int     @id @default(autoincrement())
-  post_id    Int
-  hashtag_id Int
-  hashtag    hashtag @relation(fields: [hashtag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  post       post    @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model PostHashtag {
+  id        Int     @id @default(autoincrement())
+  postId    Int     @map("post_id")
+  hashtagId Int     @map("hashtag_id")
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("post_hashtag")
 }
 
-model post_like {
-  id         Int        @id @default(autoincrement())
-  post_id    Int
-  user_id    Int
-  post       post       @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  insta_user insta_user @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model PostLike {
+  id        Int       @id @default(autoincrement())
+  postId    Int       @map("post_id")
+  userId    Int       @map("user_id")
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  instaUser InstaUser @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([post_id, user_id])
+  @@unique([postId, userId])
+  @@map("post_like")
 }
 
-model post_media {
-  id        Int    @id @default(autoincrement())
-  post_id   Int
-  media_url String
-  sort      Int    @db.SmallInt
-  post      post   @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model PostMedia {
+  id       Int    @id @default(autoincrement())
+  postId   Int    @map("post_id")
+  mediaUrl String @map("media_url")
+  sort     Int    @db.SmallInt
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([post_id, sort])
+  @@unique([postId, sort])
+  @@map("post_media")
 }
 
-model post_mention {
-  id         Int        @id @default(autoincrement())
-  post_id    Int
-  user_id    Int
-  post       post       @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  insta_user insta_user @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model PostMention {
+  id        Int       @id @default(autoincrement())
+  postId    Int       @map("post_id")
+  userId    Int       @map("user_id")
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  instaUser InstaUser @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("post_mention")
 }
 
-model refresh_token {
-  token      String    @id
-  created_at DateTime? @default(now()) @db.Timestamp(6)
+model RefreshToken {
+  token     String    @id
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("refresh_token")
 }
 
-model saved_post {
-  id         Int        @id @default(autoincrement())
-  post_id    Int
-  user_id    Int
-  post       post       @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  insta_user insta_user @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model SavedPost {
+  id        Int       @id @default(autoincrement())
+  postId    Int       @map("post_id")
+  userId    Int       @map("user_id")
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  instaUser InstaUser @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([post_id, user_id])
+  @@unique([postId, userId])
+  @@map("saved_post")
 }
