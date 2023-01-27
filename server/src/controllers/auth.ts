@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { pick } from 'lodash';
+import _, { pick } from 'lodash';
 import { ZodError } from 'zod';
 
 import AuthTokenPayload from '../interfaces/AuthTokenPayload';
@@ -8,6 +8,9 @@ import SignIn from '../interfaces/SignIn';
 import {
   getAccessAndRefreshToken,
   saveRefreshToken,
+  verifyRefreshToken,
+  isRefreshTokenSaved,
+  getAccessToken,
 } from '../services/authToken';
 import {
   createUser,
@@ -98,7 +101,39 @@ const signIn = async (req: Request<{}, {}, SignIn>, res: Response) => {
   }
 };
 
+const getAccessTokenByRefreshToken = async (req: Request, res: Response) => {
+  try {
+    const refreshToken = req.cookies.refreshToken as string | undefined;
+
+    if (!refreshToken)
+      return res.status(400).json({ error: 'Refresh token is required' });
+
+    const authTokenPayload = verifyRefreshToken(refreshToken);
+
+    const isTokenSaved = await isRefreshTokenSaved(refreshToken);
+
+    if (!isTokenSaved)
+      return res.status(400).json({ message: 'Refresh token is invalid.' });
+
+    console.log(authTokenPayload);
+
+    const accessToken = getAccessToken(
+      pick(authTokenPayload, [
+        'id',
+        'name',
+        'username',
+        'email',
+      ]) as AuthTokenPayload
+    );
+
+    return res.json({ accessToken });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
 export default {
   register,
   signIn,
+  getAccessTokenByRefreshToken,
 };
