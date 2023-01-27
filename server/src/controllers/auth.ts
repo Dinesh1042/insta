@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { pick } from 'lodash';
+import { ZodError } from 'zod';
 
 import AuthTokenPayload from '../interfaces/AuthTokenPayload';
 import RegisterUser from '../interfaces/RegisterUser';
@@ -14,10 +15,13 @@ import {
   getUserByUsername,
 } from '../services/user';
 import { compare, hash } from '../utils/password';
+import Validators from '../validators';
 
 const register = async (req: Request<{}, {}, RegisterUser>, res: Response) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password } = Validators.RegisterUser.parse(
+      req.body
+    );
 
     const isExistingUser = Boolean(await getUserByEmail(email));
 
@@ -51,13 +55,17 @@ const register = async (req: Request<{}, {}, RegisterUser>, res: Response) => {
 
     res.status(201).json({ accessToken });
   } catch (error) {
-    res.json(error);
+    const isValidationError = error instanceof ZodError;
+
+    res
+      .status(isValidationError ? 400 : 500)
+      .json(isValidationError ? error.flatten().fieldErrors : 500);
   }
 };
 
 const signIn = async (req: Request<{}, {}, SignIn>, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = Validators.SignUser.parse(req.body);
 
     const user = await getUserByEmail(email);
 
@@ -82,7 +90,11 @@ const signIn = async (req: Request<{}, {}, SignIn>, res: Response) => {
 
     res.status(200).json({ accessToken });
   } catch (error) {
-    res.json(error);
+    const isValidationError = error instanceof ZodError;
+
+    res
+      .status(isValidationError ? 400 : 500)
+      .json(isValidationError ? error.flatten().fieldErrors : 500);
   }
 };
 
