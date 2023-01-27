@@ -23,3 +23,11 @@ export const getUserByUsername = (username: string) => {
     },
   });
 };
+
+export const getUser = (id: number) => {
+  return prisma.instaUser.findFirst({
+    where: {
+      id,
+    },
+  });
+};
