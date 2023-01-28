@@ -44,6 +44,12 @@ const getAllPosts = async (userId: number) => {
     },
     include: {
       postMedias: true,
+      instaUser: {
+        select: {
+          username: true,
+          avatar: true,
+        },
+      },
     },
   });
 };
