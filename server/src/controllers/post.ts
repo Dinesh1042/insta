@@ -32,6 +32,20 @@ const savePost = async (req: Request, res: Response, next: NextFunction) => {
 
 const createPost: RequestHandler[] = [parsePosts, savePost];
 
+// This Api we get post of users with the currentUser follows
+const getAllPost = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+
+    const posts = await PostService.getAllPosts(user.id);
+
+    res.json(posts);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export default {
   createPost,
+  getAllPost,
 };
