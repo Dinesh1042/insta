@@ -9,4 +9,9 @@ router
   .get(PostController.getAllPost)
   .post(PostController.createPost);
 
+router
+  .route('/:id')
+  .get(PostController.getPost)
+  .delete(PostController.deletePost);
+
 export default router;

@@ -22,7 +22,7 @@ const savePost = async (req: Request, res: Response, next: NextFunction) => {
       mentions: [],
     };
 
-    const post = await PostService.createPost(req.user.id, newPost);
+    const post = await PostService.create(req.user.id, newPost);
 
     res.status(201).json(post);
   } catch (error) {
@@ -37,7 +37,7 @@ const getAllPost = async (req: Request, res: Response) => {
   try {
     const user = req.user;
 
-    const posts = await PostService.getAllPosts(user.id);
+    const posts = await PostService.getAll(user.id);
 
     res.json(posts);
   } catch (error) {
@@ -45,7 +45,49 @@ const getAllPost = async (req: Request, res: Response) => {
   }
 };
 
+const getPost = async (req: Request<{ id: number }>, res: Response) => {
+  try {
+    const postId = +req.params.id;
+    const userId = req.user.id;
+
+    const post = await PostService.get(postId);
+
+    if (!post) return res.status(404).json({ message: 'No post found' });
+
+    const hasAccess = await PostService.hasAccessToView(userId, post);
+
+    if (!hasAccess) return res.status(403).json({ message: 'Access denied' });
+
+    res.status(200).json(post);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+};
+
+const deletePost = async (req: Request<{ id: number }>, res: Response) => {
+  try {
+    const postId = Number(req.params.id);
+    const userId = req.user.id;
+
+    const post = await PostService.get(postId);
+
+    if (!post) return res.status(404).json({ message: 'No post found' });
+
+    const hasAccess = await PostService.hasAccessToDelete(userId, post);
+
+    if (!hasAccess) return res.status(401).json({ message: 'Access denied' });
+
+    await PostService.deletePost(postId);
+    res.status(200).json({ message: 'Post has Removed' });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
 export default {
   createPost,
   getAllPost,
+  getPost,
+  deletePost,
 };
