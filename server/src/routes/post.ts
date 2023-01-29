@@ -14,4 +14,9 @@ router
   .get(PostController.getPost)
   .delete(PostController.deletePost);
 
+router
+  .route('/:id/like')
+  .post(PostController.likePost)
+  .delete(PostController.unLikePost);
+  
 export default router;

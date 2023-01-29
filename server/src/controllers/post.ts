@@ -85,9 +85,52 @@ const deletePost = async (req: Request<{ id: number }>, res: Response) => {
   }
 };
 
+const likePost = async (req: Request<{ id: number }>, res: Response) => {
+  try {
+    const postId = Number(req.params.id);
+    const userId = req.user.id;
+    const post = await PostService.get(postId);
+
+    if (!post) return res.status(404).json({ message: 'No post found' });
+
+    const hasAccess = await PostService.hasAccessToView(userId, post);
+
+    if (!hasAccess) return res.status(403).json({ message: 'Access denied' });
+
+    await PostService.like(userId, post.id);
+
+    res.status(201).json({ message: 'Post has been liked' });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
+const unLikePost = async (req: Request<{ id: number }>, res: Response) => {
+  try {
+    const postId = Number(req.params.id);
+    const userId = req.user.id;
+    const post = await PostService.get(postId);
+
+    if (!post) return res.status(404).json({ message: 'No post found' });
+
+    const hasAccess = await PostService.hasAccessToView(userId, post);
+    console.log(hasAccess);
+
+    if (!hasAccess) return res.status(403).json({ message: 'Access denied' });
+
+    await PostService.unLike(userId, post.id);
+
+    res.status(201).json({ message: 'Post has been disliked' });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
 export default {
   createPost,
   getAllPost,
   getPost,
   deletePost,
+  likePost,
+  unLikePost,
 };

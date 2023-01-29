@@ -22,6 +22,18 @@ const create = (userId: number, post: CreatePost) => {
     },
     include: {
       postMedias: true,
+      instaUser: {
+        select: {
+          username: true,
+          avatar: true,
+        },
+      },
+      _count: {
+        select: {
+          postLikes: true,
+          comments: true,
+        },
+      },
     },
   });
 };
@@ -51,6 +63,12 @@ const getAll = async (userId: number) => {
         select: {
           username: true,
           avatar: true,
+        },
+      },
+      _count: {
+        select: {
+          postLikes: true,
+          comments: true,
         },
       },
     },
@@ -103,10 +121,30 @@ const hasAccessToDelete = (userId: number, post: Post) => {
   return new Promise<boolean>((resolve) => resolve(userId === post.userId));
 };
 
-const deletePost = ( postId: number) => {
+const deletePost = (postId: number) => {
   return prisma.post.delete({
     where: {
       id: postId,
+    },
+  });
+};
+
+const like = (userId: number, postId: number) => {
+  return prisma.postLike.create({
+    data: {
+      userId,
+      postId,
+    },
+  });
+};
+
+const unLike = (userId: number, postId: number) => {
+  return prisma.postLike.delete({
+    where: {
+      postId_userId: {
+        userId,
+        postId,
+      },
     },
   });
 };
@@ -118,4 +156,6 @@ export default {
   hasAccessToView,
   hasAccessToDelete,
   deletePost,
+  like,
+  unLike,
 };
